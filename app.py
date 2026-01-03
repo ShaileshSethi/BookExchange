@@ -1,9 +1,9 @@
+import os
 from cs50 import SQL
 from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import os
 
 app = Flask(__name__)
 
