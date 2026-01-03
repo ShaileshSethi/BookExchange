@@ -92,11 +92,11 @@ def setup():
         user_id = db.execute("SELECT id FROM users WHERE username = 'admin'")[0]["id"]
         books = [
             ("Engineering Mathematics I", "Good condition", 350, "Semester 1",
-             "https://via.placeholder.com/300x200?text=Maths", user_id),
+             "https://m.media-amazon.com/images/I/41zouV6gO7L.jpg", user_id),
             ("Data Structures & Algorithms", "Slightly highlighted", 450, "Semester 3",
-             "https://via.placeholder.com/300x200?text=DSA", user_id),
+             "https://m.media-amazon.com/images/I/A1l5b1RPffL._SL1500_.jpg", user_id),
             ("Digital Electronics", "Almost new", 300, "Semester 2",
-             "https://via.placeholder.com/300x200?text=Electronics", user_id)
+             "https://m.media-amazon.com/images/I/71E5gbBM42L._SL1500_.jpg", user_id)
         ]
         for b in books:
             db.execute("""
