@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+venv/
+.env
+book_exchange.db
+flask_session/
+.vscode/

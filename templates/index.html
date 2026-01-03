@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Campus Book Exchange</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    {% if page not in ["login", "register"] %}
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">📚 Campus Book Exchange</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/add">Add Book</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/requests">My Requests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/seller">Seller Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container">
+
+        {% if page == "login" %}
+        <div class="card mx-auto mt-5 p-4" style="max-width: 400px;">
+            <h2 class="card-title text-center mb-3">🔐 Login</h2>
+            <form method="post">
+                <input class="form-control mb-3" name="username" placeholder="Username" required>
+                <input class="form-control mb-3" type="password" name="password" placeholder="Password" required>
+                <button class="btn btn-primary w-100">Login</button>
+            </form>
+            <p class="text-center mt-3">Don't have an account? <a href="/register">Register</a></p>
+        </div>
+        {% endif %}
+
+        {% if page == "register" %}
+        <div class="card mx-auto mt-5 p-4" style="max-width: 400px;">
+            <h2 class="card-title text-center mb-3">📝 Register</h2>
+            <form method="post">
+                <input class="form-control mb-3" name="username" placeholder="Username" required>
+                <input class="form-control mb-3" type="email" name="email" placeholder="Email" required>
+                <input class="form-control mb-3" type="password" name="password" placeholder="Password" required>
+                <button class="btn btn-primary w-100">Register</button>
+            </form>
+            <p class="text-center mt-3">Already have an account? <a href="/login">Login</a></p>
+        </div>
+        {% endif %}
+
+        {% if page == "index" %}
+        <h2 class="mb-4">📖 Available Books</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for book in books %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ book.image_url if book.image_url else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                         class="card-img-top" alt="{{ book.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ book.name }}</h5>
+                        <p class="card-text">{{ book.semester }}</p>
+                        <p class="card-text"><strong>₹{{ book.price }}</strong></p>
+                        <p class="card-text">
+                            <span class="text-warning">
+                                {% for i in range(5) %}
+                                    {% if i < book.avg_rating|round|int %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                            ({{ book.review_count }} reviews)
+                        </p>
+                        <a href="/book/{{ book.id }}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p>No books available yet.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if page == "book" %}
+        <div class="card mx-auto mt-4 p-4" style="max-width: 750px;">
+            <div class="row g-4">
+                <div class="col-md-5">
+                    <img src="{{ book.image_url if book.image_url else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                         class="img-fluid rounded" alt="{{ book.name }}">
+                </div>
+                <div class="col-md-7">
+                    <h2>{{ book.name }}</h2>
+                    <p>{{ book.description }}</p>
+                    <p><strong>Semester:</strong> {{ book.semester }}</p>
+                    <p><strong>Price:</strong> ₹{{ book.price }}</p>
+                    <p><strong>Seller:</strong> {{ book.seller }}</p>
+                    <p>
+                        <strong>Rating:</strong>
+                        <span class="text-warning">
+                            {% for i in range(5) %}
+                                {% if i < book.avg_rating|round|int %}★{% else %}☆{% endif %}
+                            {% endfor %}
+                        </span>
+                        ({{ '%.1f'|format(book.avg_rating) }}/5 from {{ book.review_count }} reviews)
+                    </p>
+                    
+                    <form method="post" action="/request" class="mt-3">
+                        <input type="hidden" name="book_id" value="{{ book.id }}">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">Qty</span>
+                            <input type="number" name="quantity" value="1" min="1" class="form-control">
+                        </div>
+                        <button class="btn btn-success w-100">📦 Request Book</button>
+                    </form>
+                    <a href="/" class="btn btn-secondary w-100 mt-2">← Back to Home</a>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h4>⭐ Reviews</h4>
+            <div class="card mb-3 p-3">
+                <h6>{{ 'Update Your Review' if user_review else 'Write a Review' }}</h6>
+                <form method="post" action="/review">
+                    <input type="hidden" name="book_id" value="{{ book.id }}">
+                    <div class="mb-2">
+                        <label class="form-label">Rating</label>
+                        <select name="rating" class="form-select" required>
+                            <option value="">Select rating</option>
+                            {% for i in range(5, 0, -1) %}
+                            <option value="{{ i }}" {% if user_review and user_review.rating == i %}selected{% endif %}>
+                                {{ '★' * i }}{{ '☆' * (5-i) }} ({{ i }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <textarea class="form-control" name="content" rows="2" 
+                                  placeholder="Write your review (optional)">{{ user_review.content if user_review else '' }}</textarea>
+                    </div>
+                    <button class="btn btn-primary btn-sm">{{ 'Update Review' if user_review else 'Submit Review' }}</button>
+                </form>
+            </div>
+
+            {% if reviews %}
+            {% for r in reviews %}
+            <div class="border rounded p-3 mb-2">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong>{{ r.reviewer }}</strong>
+                        <span class="text-warning ms-2">
+                            {% for i in range(5) %}{% if i < r.rating %}★{% else %}☆{% endif %}{% endfor %}
+                        </span>
+                    </div>
+                    <small>{{ r.created_at }}</small>
+                </div>
+                {% if r.content %}<p class="mb-1 mt-2">{{ r.content }}</p>{% endif %}
+                {% if r.user_id == session.user_id %}
+                <form method="post" action="/review/delete/{{ r.id }}" class="mt-2">
+                    <button class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No reviews yet. Be the first to review!</p>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <h4>💬 Comments</h4>
+            <form method="post" action="/comment" class="mb-3">
+                <input type="hidden" name="book_id" value="{{ book.id }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="content" placeholder="Add a comment..." required>
+                    <button class="btn btn-outline-primary">Post</button>
+                </div>
+            </form>
+
+            {% if comments %}
+            {% for c in comments %}
+            <div class="border-start border-3 ps-3 mb-3">
+                <div class="d-flex justify-content-between">
+                    <strong>{{ c.commenter }}</strong>
+                    <small>{{ c.created_at }}</small>
+                </div>
+                <p class="mb-1">{{ c.content }}</p>
+                {% if c.user_id == session.user_id %}
+                <form method="post" action="/comment/delete/{{ c.id }}">
+                    <button class="btn btn-link btn-sm p-0">Delete</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No comments yet. Start the conversation!</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if page == "add" %}
+        <div class="card mx-auto mt-4 p-4" style="max-width: 500px;">
+            <h2 class="card-title mb-3">➕ Add New Book</h2>
+            <form method="post">
+                <input class="form-control mb-3" name="name" placeholder="Book Name" required>
+                <textarea class="form-control mb-3" name="description" placeholder="Description" required></textarea>
+                <input class="form-control mb-3" type="number" name="price" placeholder="Price (₹)" step="0.01" required>
+                <input class="form-control mb-3" name="semester" placeholder="Semester (e.g., Semester 1)" required>
+                <input class="form-control mb-3" name="image_url" placeholder="Image URL (optional)">
+                <button class="btn btn-primary w-100">Add Book</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if page == "requests" %}
+        <h2 class="mb-4">📋 My Requests</h2>
+        <div class="list-group">
+            {% for r in requests %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ r.name }}</strong>
+                    <span>— Qty: {{ r.quantity }} | Total: ₹{{ r.total }}</span>
+                </div>
+                <span class="badge {% if r.status == 'Completed' %}bg-success{% else %}bg-warning{% endif %}">
+                    {{ r.status }}
+                </span>
+            </div>
+            {% else %}
+            <p>No requests yet.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if page == "seller" %}
+        <h2 class="mb-4">🏪 Seller Dashboard</h2>
+        <div class="list-group">
+            {% for r in requests %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ r.name }}</strong>
+                    <span>— Buyer: {{ r.buyer }} | Qty: {{ r.quantity }} | Total: ₹{{ r.total }}</span>
+                </div>
+                <div>
+                    <span class="badge {% if r.status == 'Completed' %}bg-success{% else %}bg-warning{% endif %} me-2">
+                        {{ r.status }}
+                    </span>
+                    {% if r.status != 'Completed' %}
+                    <a href="/complete/{{ r.id }}" class="btn btn-sm btn-success">✓ Complete</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <p>No requests for your books yet.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if page == "track" %}
+        <div class="card mx-auto mt-4 p-4" style="max-width: 400px;">
+            <h2>📍 Request Status</h2>
+            <p>Status: <strong>{{ req.status }}</strong></p>
+            <a href="/requests" class="btn btn-secondary w-100 mt-2">← Back to My Requests</a>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
